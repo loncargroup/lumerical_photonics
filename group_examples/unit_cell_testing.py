@@ -69,7 +69,7 @@ hole_params = {
         'beam_height': h0,
         'beam_width': w0,
         'ref_index': 2.4028,
-        'hole_type': 'ribAir'
+        'hole_type': 'tri_fil'
     }
 
 diel_freq_list = a_list

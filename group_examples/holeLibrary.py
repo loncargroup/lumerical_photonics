@@ -6,6 +6,7 @@ from wvgsolver import Vec3
 from wvgsolver.geometry import BoxStructure, TriStructure, CylinderStructure, DielectricMaterial, \
     PolygonStructure
 import numpy as np
+import gdspy
 
 
 def build_hole(hole_params):
@@ -140,3 +141,18 @@ def build_hole(hole_params):
 
         cell_box = BoxStructure(Vec3(0), cell_size, DielectricMaterial(ref_index, order=2, color="blue"))
         return [rib_up,rib_down,cell_box], cell_size
+    elif hole_type == 'tri_fil':
+        r1 = hx/5
+        c = gdspy.Curve(-hx/2, 0).L(0, hy/2, hx/2, 0, 0, -hy/2, hx/2, 0)
+        print(c.get_points())
+        poly = gdspy.Polygon(c.get_points())
+        poly.fillet(r1)
+        verts = []
+        for i in poly.polygons[0]:
+            verts.append((i[0], i[1]))
+        print(verts)
+        tri = PolygonStructure(pos=Vec3(0), verts=verts, height=h0,
+                               material=DielectricMaterial(1, order=1))
+        cell_box = BoxStructure(Vec3(0), cell_size, DielectricMaterial(ref_index, order=2, color="blue"))
+        return [tri, cell_box], cell_size
+
