@@ -20,7 +20,7 @@ target_frequency = 406.7e12
 source_frequency = 406.7e12
 hide = False
 
-FDTDLoc = 'C:/Program Files/Lumerical/v221/'   # FDTDLoc, I will show you where this is later but this is how you can do it local
+FDTDLoc = 'C:/Program Files/Lumerical/v221/'  # FDTDLoc, I will show you where this is later but this is how you can do it local
 FDTDexeLoc = os.path.join(FDTDLoc, 'bin/fdtd-solutions')
 FDTDmpiLoc = os.path.join(FDTDLoc, 'bin/fdtd-engine-ompi-lcl')
 
@@ -66,13 +66,13 @@ def generate_cavity_and_check(pcc_params):
     hx_list = np.append(hx_list, a * hx_scale * np.array([defect(i, ndef, hx_def) for i in defect_index]))
     hy_list = np.append(hy_list, a * hy_scale * np.array([defect(i, ndef, hy_def) for i in defect_index]))
 
-    #Make the right mirror
+    # Make the right mirror
     right_list = np.ones(nright)
     lat_list = np.append(lat_list, a * right_list)
     hx_list = np.append(hx_list, a * hx_scale * right_list)
     hy_list = np.append(hy_list, a * hy_scale * right_list)
 
-    #Make the taper region
+    # Make the taper region
     if pcc_params['tap_defect_type'] == 'cubic':
         defect = cubic_defect
     elif pcc_params['tap_defect_type'] == 'quadratic':  ### NOTE THAT QUADRATIC IS NOT RIGHT Now
@@ -181,7 +181,7 @@ def run_cavity(cavity_params):
     global source_frequency
     global lat_const
     cavity, file_name, engine = build_cavity(cavity_params)
-    flag = False # Have this for now, but change when we put fabrication tolerance back in
+    flag = False  # Have this for now, but change when we put fabrication tolerance back in
     if flag:
         print('Fabrication intolerant')
         return 0
@@ -293,8 +293,6 @@ ntaper = 5
 p0 = np.array([.173])
 # dA, dX, dY, cX
 bounds = ((.05, .25), (-.1, .1), (-.1, .1), (.5, .9))
-
-
 
 with open(log_name, "ab") as f:
     f.write(

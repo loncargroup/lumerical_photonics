@@ -11,4 +11,12 @@ we can establish which parameters to vary over in terms of our Q testing
     a. Write code that takes a parameter array (a, cX, cY, cW, cH, n_def, n_left, n_right, n_taper), performs a simulation, and
     parses the cavity as a gds.
     b. Wrap this code into a parameter sweep. Eventual goal is to get a gds with a spreadsheet that has Q_design, lambda_design for every device.
-4. 
+4. Develop post-mortem analysis process flow. This is where I think that we can benefit from thinking like PPLN folk!
+At first relatively manual, we can make this nicely automatic once we can do SEM fitting using Kazu's code.
+    a. Take the .csv of Q_design, lambda_design from task 3 (if this is for chips before doing this, just simulate for
+     designed parameters manually) and create a dataframe akin to how we do our data analysis
+    b. For the devices measured, add the analyzed data to the dataframe
+    c. For the devices SEM'd, simulate the devices based on measured SEM dimensions
+    d. Finally, we can calculate offsets akin to PPLN people, where we can distinguish between measurable fabrication offsets
+    [via Delta Q(lambda)_des vs. Q(lambda)_sem,sim] and unaccounted offsets (via Delta Q(lambda)_des vs. Q(lambda)_meas]
+    e. With this analysis, we can properly calibrate the subsequent round of fabrication to match desired properties
