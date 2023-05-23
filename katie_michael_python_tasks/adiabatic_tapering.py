@@ -11,7 +11,7 @@ from wvgsolver import Cavity1D, UnitCell, Vec3
 from wvgsolver.utils import BBox
 from wvgsolver.geometry import BoxStructure, TriStructure, CylinderStructure, DielectricMaterial, MeshRegion
 from wvgsolver.engine import LumericalEngine
-from holeLibrary import build_hole
+from common_functions import build_cavity
 
 iter_count = 0
 
@@ -25,162 +25,12 @@ FDTDexeLoc = os.path.join(FDTDLoc, 'bin/fdtd-solutions')
 FDTDmpiLoc = os.path.join(FDTDLoc, 'bin/fdtd-engine-ompi-lcl')
 
 
-def cubic_defect(i, ndef, maxdef):
-    x = np.abs(i)
-    return 1 - maxdef * (2 * (x / ndef) ** 3 - 3 * (x / ndef) ** 2 + 1)
-
-
-def quadratic_defect(i, ndef, maxdef):
-    x = np.abs(i)
-    return 1 - maxdef * (2 * (x / ndef) ** 3 - 3 * (x / ndef) ** 2 + 1)
-
-
-def generate_cavity_and_check(pcc_params):
-    ndef = pcc_params['ndef']
-    nleft = pcc_params['nleft']
-    nright = pcc_params['nright']
-    ntaper = pcc_params['ntaper']
-
-    a = pcc_params['a']
-    w0 = pcc_params['cW'] * a
-    hx_scale = pcc_params['cX']
-    hy_scale = pcc_params['cY']
-
-    # Make the left mirror region
-    left_list = np.ones(nleft)
-    lat_list = left_list * a
-    hx_list = lat_list * hx_scale
-    hy_list = lat_list * hy_scale
-
-    # Make the cavity region
-    if pcc_params['cav_defect_type'] == 'cubic':
-        defect = cubic_defect
-    elif pcc_params['cav_defect_type'] == 'quadratic':  ### NOTE THAT QUADRATIC IS NOT RIGHT Now
-        defect = quadratic_defect
-
-    defect_index = range(-ndef, ndef)
-    lat_def = pcc_params['dA']
-    hx_def = pcc_params['dX']
-    hy_def = pcc_params['dY']
-    lat_list = np.append(lat_list, a * np.array([defect(i, ndef, lat_def) for i in defect_index]))
-    hx_list = np.append(hx_list, a * hx_scale * np.array([defect(i, ndef, hx_def) for i in defect_index]))
-    hy_list = np.append(hy_list, a * hy_scale * np.array([defect(i, ndef, hy_def) for i in defect_index]))
-
-    # Make the right mirror
-    right_list = np.ones(nright)
-    lat_list = np.append(lat_list, a * right_list)
-    hx_list = np.append(hx_list, a * hx_scale * right_list)
-    hy_list = np.append(hy_list, a * hy_scale * right_list)
-
-    # Make the taper region
-    if pcc_params['tap_defect_type'] == 'cubic':
-        defect = cubic_defect
-    elif pcc_params['tap_defect_type'] == 'quadratic':  ### NOTE THAT QUADRATIC IS NOT RIGHT Now
-        defect = quadratic_defect
-
-    tap_index = range(ntaper, 1, -1)
-    lat_def_tap = pcc_params['dA_tap']
-    hx_def_tap = pcc_params['dX_tap']
-    hy_def_tap = pcc_params['dY_tap']
-
-    lat_list = np.append(lat_list, a * np.array([defect(i, ndef, lat_def_tap) for i in tap_index]))
-    hx_list = np.append(hx_list, a * hx_scale * np.array([defect(i, ndef, hx_def_tap) for i in tap_index]))
-    hy_list = np.append(hy_list, a * hy_scale * np.array([defect(i, ndef, hy_def_tap) for i in tap_index]))
-
-    return [lat_list, hx_list, hy_list]
-
-
-def build_cavity(cavity_params):
-    global nleft
-    global nright
-    global ndef
-    global ntaper
-    global iter_count
-    global hide
-    iter_count += 1
-    # Put this for now, but this might not be the way we make it
-    pcc_params = {
-        'a': lat_const,
-        'cX': cX,
-        'cY': cY,
-        'cW': cW,
-        'cH': cH,
-        'dA': lat_def,
-        'dY': 0,
-        'dX': hx_def,
-        'dA_tap': lat_def_tap,
-        'dY_tap': hy_def_tap,
-        'dX_tap': hx_def_tap,
-        'nleft': nleft,
-        'nright': nright,
-        'ndef': ndef,
-        'ntaper': ntaper,
-        'ref_index': 2.4028,
-        'hole_type': 'rib',
-        'effective_index': 1.6,
-        'resonance_wavelength': 0.737,
-        'cav_defect_type': 'cubic',
-        'tap_defect_type': 'cubic',
-        'min_dim': 5e-8
-    }
-
-    beam_length = 30
-    nleft = pcc_params['nleft']
-    ndef = pcc_params['ndef']
-    nright = pcc_params['nright']
-    ntaper = pcc_params['ntaper']
-    a_list, hx_list, hy_list = generate_cavity_and_check(pcc_params)
-    a = pcc_params['a']
-    h0 = pcc_params['cH'] * a
-    w0 = pcc_params['cW'] * a
-
-    unit_cells = []
-
-    engine = LumericalEngine(mesh_accuracy=5, hide=hide, lumerical_path=FDTDLoc, working_path="./fsps")
-
-    for (a, hx, hy) in zip(a_list, hx_list, hy_list):
-        # Take each unit cell and add it to our model. First update the unit cell parameters according to our cell list
-
-        hole_params = {
-            'a': a,
-            'hx': hx,
-            'hy': hy,
-            'beam_width': w0,
-            'beam_height': h0,
-            'ref_index': 2.4028,
-            'hole_type': pcc_params['hole_type']
-        }
-
-        hole, cell_size = build_hole(hole_params)
-        unit_cells += [UnitCell(structures=hole, size=cell_size, engine=engine)]
-
-    cavity = Cavity1D(
-        unit_cells=unit_cells,
-        structures=[BoxStructure(Vec3(0), Vec3(beam_length * 1e-6, w0 * 1e-6, h0 * 1e-6),
-                                 DielectricMaterial(2.4028, order=2, color="red"))],
-        engine=engine,
-    )
-
-    cavity_name = np.array2string(cavity_params, prefix='', separator='_')
-    cavity_name = cavity_name[1:]
-    cavity_name = cavity_name[:-1]
-    cavity_name = cavity_name.replace(" ", "")
-    file_name = log_name[:-4] + "_" + cavity_name + "_" + str(iter_count)
-    file_name = log_name[:-4] + "_rib_00_MidSim.obj"
-    cavity.save(file_name)
-    # Once we check plot_geom, uncomment this
-    # plot_geom(cavity, file_name + "_geom.png", hide)
-
-    return cavity, file_name, engine
-
-
-def run_cavity(cavity_params):
+def run_cavity(cavity_params,log_name,FDTDLoc):
     global iter_count
     global rerun_thresh
     global target_frequency
     global source_frequency
-    global lat_const
-    cavity, file_name, engine = build_cavity(cavity_params)
+    cavity, file_name, engine = build_cavity(cavity_params, log_name, FDTDLoc)
     flag = False  # Have this for now, but change when we put fabrication tolerance back in
     if flag:
         print('Fabrication intolerant')
@@ -268,35 +118,29 @@ def run_cavity(cavity_params):
 
         return witness
 
+data_dir = f"E:/User Data/michael/lum_results/rib_stuff/"
+log_name = data_dir + f"rib_stuff_00.txt"
 
-log_name = f"E:/User Data/michael/lum_results/rib_stuff/rib_stuff_00.txt"
-
-lat_const = .287
-cX = .625
-cY = 1.76
-cW = 2.01
-cH = .503
-
-lat_def = .1
-hx_def = .1
-hy_def = 0
-
-lat_def_tap = .2
-hx_def_tap = 0
-hy_def_tap = .3
-
-nleft = 7
-nright = 2
-ndef = 6
-ntaper = 5
-
-p0 = np.array([.173])
-# dA, dX, dY, cX
-bounds = ((.05, .25), (-.1, .1), (-.1, .1), (.5, .9))
+cp = {'a': .287,
+      'cX': .625,
+      'cY': 1.76,
+      'cW': 2.01,
+      'cH': .503,
+      'dA': .1,
+      'dY': .1,
+      'dX': 0,
+      'dA_tap': .2,
+      'dY_tap': 0,
+      'dX_tap': .3,
+      'nleft': 6,
+      'nright': 6,
+      'ndef': 6,
+      'ntaper': 3,
+      'hole_type': 'rib'}
 
 with open(log_name, "ab") as f:
     f.write(
         b"dA    dX  dY  fitness wavelen_pen purcell qxmin   qxmax   qscat   qtot    vmode   vmode_copy  F lat_const")
 
 # witness = fitness(p0)
-run_cavity(p0)
+run_cavity(cp, data_dir, FDTDLoc)
