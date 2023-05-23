@@ -129,14 +129,15 @@ cp = {'a': .287,
       'dA': .1,
       'dY': .1,
       'dX': 0,
-      'dA_tap': .2,
-      'dY_tap': 0,
-      'dX_tap': .3,
+      'dA_tap': 0,
+      'dY_tap': .8,
+      'dX_tap': 0,
       'nleft': 6,
-      'nright': 6,
+      'nright': 3,
       'ndef': 6,
-      'ntaper': 3,
-      'hole_type': 'rib'}
+      'ntaper': 8,
+      'hole_type': 'rib',
+      'shift': -1}
 
 with open(log_name, "ab") as f:
     f.write(

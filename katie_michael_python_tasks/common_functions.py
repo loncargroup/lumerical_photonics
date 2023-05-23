@@ -81,9 +81,10 @@ def build_hole(hole_params):
         rib = PolygonStructure(pos=Vec3(0), verts=rib_verts, height=h0, material=DielectricMaterial(ref_index, order=1))
         return [rib], cell_size
     elif hole_type == 'rib':
-        npoints = 40
+        shift = hole_params['shift']
         coef = hy / (a - hx) ** 2
-        bot = (w0 - hy) / 2
+        npoints = 40
+        bot = (w0 - hy / 2)/2 + shift * hy / 4
         # creates the unit cell
         rib_up_verts = []
         for s in np.linspace(-a / 2, a / 2, num=npoints):
@@ -93,7 +94,7 @@ def build_hole(hole_params):
 
         for s in np.linspace(a / 2, hx / 2, num=npoints):
             x = s
-            y = -coef * (s - a / 2) ** 2 + w0 / 2
+            y = -coef * (s - a / 2) ** 2 + bot + hy/2
             rib_up_verts.append((x, y))
 
         for s in np.linspace(hx / 2, hx - a / 2, num=npoints):
@@ -108,35 +109,13 @@ def build_hole(hole_params):
 
         for s in np.linspace(-a / 2, -hx / 2, num=npoints):
             x = s
-            y = -coef * (s + a / 2) ** 2 + w0 / 2
+            y = -coef * (s + a / 2) ** 2 + bot + hy/2
             rib_up_verts.append((x, y))
         rib_up = PolygonStructure(pos=Vec3(0), verts=rib_up_verts, height=h0,
                                   material=DielectricMaterial(1, order=1))
 
         rib_down_verts = []
-        for s in np.linspace(-a / 2, a / 2, num=npoints):
-            x = s
-            y = w0 / 2
-            rib_down_verts.append((x, -y))
-
-        for s in np.linspace(a / 2, hx / 2, num=npoints):
-            x = s
-            y = -coef * (s - a / 2) ** 2 + w0 / 2
-            rib_down_verts.append((x, -y))
-
-        for s in np.linspace(hx / 2, hx - a / 2, num=npoints):
-            x = s
-            y = bot + coef * (s - hx + a / 2) ** 2
-            rib_down_verts.append((x, -y))
-
-        for s in np.linspace(a / 2 - hx, -hx / 2, num=npoints):
-            x = s
-            y = bot + coef * (s + hx - a / 2) ** 2
-            rib_down_verts.append((x, -y))
-
-        for s in np.linspace(-a / 2, -hx / 2, num=npoints):
-            x = s
-            y = -coef * (s + a / 2) ** 2 + w0 / 2
+        for (x, y) in rib_up_verts:
             rib_down_verts.append((x, -y))
         rib_down = PolygonStructure(pos=Vec3(0), verts=rib_down_verts, height=h0,
                                     material=DielectricMaterial(1, order=1))
@@ -258,7 +237,6 @@ def build_cavity(cp, log_name, FDTDLoc):
 
     for (a, hx, hy) in zip(a_list, hx_list, hy_list):
         # Take each unit cell and add it to our model. First update the unit cell parameters according to our cell list
-
         hole_params = {
             'a': a,
             'hx': hx,
@@ -266,7 +244,8 @@ def build_cavity(cp, log_name, FDTDLoc):
             'beam_width': w0,
             'beam_height': h0,
             'ref_index': 2.4028,
-            'hole_type': pcc_params['hole_type']
+            'hole_type': pcc_params['hole_type'],
+            'shift': pcc_params['shift']
         }
 
         hole, cell_size = build_hole(hole_params)
