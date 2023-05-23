@@ -9,7 +9,6 @@ from wvgsolver import Cavity1D, UnitCell, Vec3
 from wvgsolver.utils import BBox
 from wvgsolver.geometry import BoxStructure, TriStructure, CylinderStructure, DielectricMaterial, MeshRegion
 from wvgsolver.engine import LumericalEngine
-from holeLibrary import build_hole
 
 
 def build_hole(hole_params):
