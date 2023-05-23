@@ -10,7 +10,6 @@ from wvgsolver.engine import LumericalEngine
 
 from holeLibrary import build_hole
 
-
 FDTDLoc = 'C:/Program Files/Lumerical/v221/'   # FDTDLoc, I will show you where this is later but this is how you can do it local
 FDTDexeLoc = os.path.join(FDTDLoc, 'bin/fdtd-solutions')
 FDTDmpiLoc = os.path.join(FDTDLoc, 'bin/fdtd-engine-ompi-lcl')
@@ -100,10 +99,10 @@ def build_cavity(cavity_params):
     hx_def = lat_def
     pcc_params = {
         'a': lat_const,
-        'cX': .625,
-        'cY': 1.76,
-        'cW': 2.01,
-        'cH': .503,
+        'cX': .683,
+        'cY': 1.55,
+        'cW': 2,
+        'cH': .5,
         'dA': lat_def,
         'dY': 0,
         'dX': hx_def,
@@ -115,7 +114,7 @@ def build_cavity(cavity_params):
         'effective_index': 1.6,
         'resonance_wavelength': 0.737,
         'defect_type': 'cubic',
-        'min_dim': 5e-8
+        'min_dim': 1e-7
     }
 
     beam_length = 30
@@ -182,8 +181,8 @@ def run_cavity(cavity_params):
     else:
         man_mesh = MeshRegion(BBox(Vec3(0), Vec3(12e-6, 0.7e-6, 0.4e-6)), 12e-9, dy=None, dz=None)
 
-        r1 = cavity.simulate("resonance", target_freq=source_frequency, source_pulselength=60e-15,analyze_fspan=10e12,
-                              analyze_time=600e-15, mesh_regions=[man_mesh], sim_size=Vec3(1.25, 3, 8))
+        r1 = cavity.simulate("resonance", target_freq=source_frequency, source_pulselength=60e-15,
+                              analyze_time=600e-15, mesh_regions=[man_mesh], sim_size=Vec3(1.25, 3, 10))
         # r1 = cavity.simulate("resonance", target_freq=target_frequency, mesh_regions=[man_mesh],
         #                     sim_size=Vec3(2, 3, 8))
 
@@ -263,10 +262,9 @@ def run_cavity(cavity_params):
         return witness
 
 
-log_name = f"C:/Users/LoncarLab/Documents/GitHub/wvgsolver/examples/ribbed_cavity_optimization" \
-           f"/rib_debug/rib_debug_orig.txt"
+log_name = f"C:/Users/LoncarLab/Documents/GitHub/lumerical_photonics/rib_cavity_optimization/rib_cav_opt_0.txt"
 
-lat_const = .287
+lat_const = .274
 p0 = np.array([.173])
 # dA, dX, dY, cX
 bounds = ((.05, .25), (-.1, .1), (-.1, .1), (.5, .9))

@@ -1,0 +1,3 @@
+dA    dX  dY  fitness wavelen_pen purcell qxmin   qxmax   qscat   qtot    vmode   vmode_copy  F lat_const
+0.173000 -912191.639173 0.994667 547314.983504 6841839.734758 3341247.742866 1216755.566632 789074.994722 0.548130 0.548130 406992502925029.250000 0.274197
+dA    dX  dY  fitness wavelen_pen purcell qxmin   qxmax   qscat   qtot    vmode   vmode_copy  F lat_const

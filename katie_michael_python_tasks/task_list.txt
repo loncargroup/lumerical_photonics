@@ -1,0 +1,14 @@
+Here are the tasks that we want to accomplish.
+
+1. Create code that simulates adiabatic tapering (eventually overcoupling). Eventual goal is to mimic Tim Schroeder saw-fish results
+    a. Establish adiabatic tapering code. Build off current generate_cavity_and_check function with new tapering function
+     on the waveguide side.
+    b. Study Q_wvg, Q_sc as a function of tapering parameters/input # of waveguide unit cells
+    c. Develop frequency port + monitor code to study the effectiveness of adiabatic taper for reducing scattering losses
+2. Write sensitivity study for determining how sensitive lambda/Q are to fabrication deviations from design. From this,
+we can establish which parameters to vary over in terms of our Q testing
+3. Code for generating a Q tester gds
+    a. Write code that takes a parameter array (a, cX, cY, cW, cH, n_def, n_left, n_right, n_taper), performs a simulation, and
+    parses the cavity as a gds.
+    b. Wrap this code into a parameter sweep. Eventual goal is to get a gds with a spreadsheet that has Q_design, lambda_design for every device.
+4. 
