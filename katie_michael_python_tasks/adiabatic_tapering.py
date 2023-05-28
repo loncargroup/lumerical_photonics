@@ -3,145 +3,40 @@
 # with recent devices.
 # We will have 4 major numbers that define our unit cells. n_left, n_def, n_right_, n_taper.
 
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 
-from wvgsolver import Cavity1D, UnitCell, Vec3
-from wvgsolver.utils import BBox
-from wvgsolver.geometry import BoxStructure, TriStructure, CylinderStructure, DielectricMaterial, MeshRegion
-from wvgsolver.engine import LumericalEngine
-from common_functions import build_cavity
+from common_functions import run_cavity
 
-iter_count = 0
-
-rerun_thresh = .94
-target_frequency = 406.7e12
-source_frequency = 406.7e12
 hide = False
-
 FDTDLoc = 'C:/Program Files/Lumerical/v221/'  # FDTDLoc, I will show you where this is later but this is how you can do it local
 FDTDexeLoc = os.path.join(FDTDLoc, 'bin/fdtd-solutions')
 FDTDmpiLoc = os.path.join(FDTDLoc, 'bin/fdtd-engine-ompi-lcl')
 
-
-def run_cavity(cavity_params,log_name,FDTDLoc):
-    global iter_count
-    global rerun_thresh
-    global target_frequency
-    global source_frequency
-    cavity, file_name, engine = build_cavity(cavity_params, log_name, FDTDLoc)
-    flag = False  # Have this for now, but change when we put fabrication tolerance back in
-    if flag:
-        print('Fabrication intolerant')
-        return 0
-    else:
-        man_mesh = MeshRegion(BBox(Vec3(0), Vec3(12e-6, 0.7e-6, 0.4e-6)), 12e-9, dy=None, dz=None)
-
-        r1 = cavity.simulate("resonance", target_freq=source_frequency, source_pulselength=60e-15, analyze_fspan=10e12,
-                             analyze_time=600e-15, mesh_regions=[man_mesh], sim_size=Vec3(1.25, 3, 8))
-        # r1 = cavity.simulate("resonance", target_freq=target_frequency, mesh_regions=[man_mesh],
-        #                     sim_size=Vec3(2, 3, 8))
-
-        # r1 = cavity.simulate("resonance", target_freq=source_frequency)
-        print("F: %f, Vmode: %f, Qwvg: %f, Qsc: %f" % (
-            r1["freq"], r1["vmode"],
-            1 / (1 / r1["qxmin"] + 1 / r1["qxmax"]),
-            1 / (2 / r1["qymax"] + 1 / r1["qzmin"] + 1 / r1["qzmax"])
-        ))
-
-        qx = 1 / (1 / r1["qxmin"] + 1 / r1["qxmax"])
-        qx1 = r1["qxmin"]
-        qx2 = r1["qxmax"]
-        qy = 1 / (2 / r1["qymax"])
-        qz = 1 / (1 / r1["qzmin"] + 1 / r1["qzmax"])
-
-        print("Qx: %f " % qx)
-        print("Qy: %f " % qy)
-        print("Qz: %f " % qz)
-
-        r1["xyprofile"].show()
-        r1["yzprofile"].show()
-
-        # Decide how we want to define qx, it's possible that we only want to define it as 'qxmax'
-        # since that's the rightward flux. This would require a new definition of qscat
-
-        cavity = Cavity1D(load_path=file_name, engine=engine)
-        r2 = cavity.get_results("resonance")[-1]
-        print(r2)
-        print(r2['res']["xyprofile"].max_loc())
-        print(r2['res']["yzprofile"].max_loc())
-        r2["sess_res"].show()
-
-        print(r2)
-
-        qscat = 1 / ((1 / qy) + (1 / qz))
-        qtot = 1 / (1 / qx + 1 / qy + 1 / qz)
-        vmode = r1["vmode"]
-        vmode_copy = vmode
-        vmode = 1e6 if vmode < 0.48 else vmode
-        qtot_max = 300000
-        purcell = qtot / vmode if qtot < qtot_max else qtot_max / vmode
-        F = r1["freq"]
-        wavelen = (2.99e8 / F) * 1e9
-
-        wavelen_pen = np.exp(-((target_frequency - F) / 4e12) ** 2)
-        # qx_pen = (np.exp(-((target_qx - qx) / 120000) ** 2) + np.exp(-((target_qx - qx) / 60000) ** 2)
-        #          + np.exp(-((target_qx - qx) / 30000) ** 2) + np.exp(-((target_qx - qx) / 2000) ** 2) / 4)
-        qscat_max = 500000
-        guidedness = qscat / qx if qscat < qscat_max else qscat_max / qx
-        # witness = -1 * purcell * guidedness # * qx_pen
-        witness = -1 * qscat / vmode if qscat < qscat_max else -1 * qscat_max / vmode
-
-        # r1["xyprofile"].save(file_name+"_xy.png",title=f"Q = {qtot:.0f} \nQ_scat = {qscat:.04} Qx = {qx:.0f}\nV = {vmode_copy:.3f}")
-        # r1["yzprofile"].save(file_name+"_yz.png",title=f"Q = {qtot:.0f} Q_scat = {qscat:.04}\n Qx1 = {qx1:.0f} Qx2 = {qx2:.0f}\nV = {vmode_copy:.3f} "+r"$\lambda$"+f" = {wavelen:.1f}")
-
-        # second condition ensures that we only rerun once
-        if ((wavelen_pen < rerun_thresh) and (source_frequency == target_frequency)):
-            # shift source frequency to cavity resonance and rerun simulation.
-            # (this should help avoid non cavities with artificially low mode volumes)
-            source_frequency = F
-            witness_rerun = run_cavity(cavity_params)
-            print("rerun. Fitness when source is recentered:", witness_rerun)
-            source_frequency = target_frequency
-            return witness_rerun
-
-        if witness < -.07:
-            lat_const = F / target_frequency * lat_const
-
-        with open(log_name, "ab") as f:
-            f.write(b"\n")
-            step_info = np.append(cavity_params, np.array(
-                [witness, wavelen_pen, purcell, r1["qxmin"], r1["qxmax"], qscat, qtot, vmode, vmode_copy, F,
-                 lat_const]))
-            np.savetxt(f, step_info.reshape(1, step_info.shape[0]), fmt='%.6f')
-
-        return witness
-
 data_dir = f"E:/User Data/michael/lum_results/rib_stuff/"
 log_name = data_dir + f"rib_stuff_00.txt"
 
-cp = {'a': .287,
-      'cX': .625,
-      'cY': 1.76,
-      'cW': 2.01,
-      'cH': .503,
-      'dA': .1,
-      'dY': .1,
-      'dX': 0,
+cp = {'a': 0.296,
+      'cX': 0.701,
+      'cY': 1.7,
+      'cW': 2,
+      'cH': .5,
+      'dA': 0.176,
+      'dY': 0,
+      'dX': 0.176,
       'dA_tap': 0,
-      'dY_tap': .8,
+      'dY_tap': 0,
       'dX_tap': 0,
       'nleft': 6,
-      'nright': 3,
+      'nright': 6,
       'ndef': 6,
-      'ntaper': 8,
+      'ntaper': 0,
       'hole_type': 'rib',
-      'shift': -1}
+      'shift': -1,
+      'source frequency': 406.7e12}
 
-with open(log_name, "ab") as f:
-    f.write(
-        b"dA    dX  dY  fitness wavelen_pen purcell qxmin   qxmax   qscat   qtot    vmode   vmode_copy  F lat_const")
 
-# witness = fitness(p0)
-run_cavity(cp, data_dir, FDTDLoc)
+freq, vmode, qe, qi = run_cavity(cp, data_dir, FDTDLoc)
+print(freq)
+print(vmode)
+print(qe)
+print(qi)

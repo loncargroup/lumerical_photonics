@@ -84,7 +84,7 @@ def build_hole(hole_params):
         shift = hole_params['shift']
         coef = hy / (a - hx) ** 2
         npoints = 40
-        bot = (w0 - hy / 2)/2 + shift * hy / 4
+        bot = (w0 - hy / 2) / 2 + shift * hy / 4
         # creates the unit cell
         rib_up_verts = []
         for s in np.linspace(-a / 2, a / 2, num=npoints):
@@ -94,7 +94,7 @@ def build_hole(hole_params):
 
         for s in np.linspace(a / 2, hx / 2, num=npoints):
             x = s
-            y = -coef * (s - a / 2) ** 2 + bot + hy/2
+            y = -coef * (s - a / 2) ** 2 + bot + hy / 2
             rib_up_verts.append((x, y))
 
         for s in np.linspace(hx / 2, hx - a / 2, num=npoints):
@@ -109,7 +109,7 @@ def build_hole(hole_params):
 
         for s in np.linspace(-a / 2, -hx / 2, num=npoints):
             x = s
-            y = -coef * (s + a / 2) ** 2 + bot + hy/2
+            y = -coef * (s + a / 2) ** 2 + bot + hy / 2
             rib_up_verts.append((x, y))
         rib_up = PolygonStructure(pos=Vec3(0), verts=rib_up_verts, height=h0,
                                   material=DielectricMaterial(1, order=1))
@@ -222,10 +222,8 @@ def build_cavity(cp, log_name, FDTDLoc):
     pcc_params.update(cp)
 
     beam_length = 30
-    nleft = pcc_params['nleft']
     ndef = pcc_params['ndef']
-    nright = pcc_params['nright']
-    ntaper = pcc_params['ntaper']
+    nleft = pcc_params['nleft']
     a_list, hx_list, hy_list = generate_cavity_and_check(pcc_params)
     a = pcc_params['a']
     h0 = pcc_params['cH'] * a
@@ -251,11 +249,14 @@ def build_cavity(cp, log_name, FDTDLoc):
         hole, cell_size = build_hole(hole_params)
         unit_cells += [UnitCell(structures=hole, size=cell_size, engine=engine)]
 
+    # cav_shift = (a_list[nleft + ndef] / 2)*1e-6
+    cav_shift = 0
     cavity = Cavity1D(
         unit_cells=unit_cells,
         structures=[BoxStructure(Vec3(0), Vec3(beam_length * 1e-6, w0 * 1e-6, h0 * 1e-6),
                                  DielectricMaterial(2.4028, order=2, color="red"))],
         engine=engine,
+        center_shift=cav_shift
     )
 
     cavity_name = 'test'
@@ -269,3 +270,45 @@ def build_cavity(cp, log_name, FDTDLoc):
     # plot_geom(cavity, file_name + "_geom.png", hide)
 
     return cavity, file_name, engine
+
+
+def run_cavity(cavity_params, log_name, FDTDLoc):
+    source_frequency = cavity_params['source frequency']
+    cavity, file_name, engine = build_cavity(cavity_params, log_name, FDTDLoc)
+    flag = False  # Have this for now, but change when we put fabrication tolerance back in
+
+    man_mesh = MeshRegion(BBox(Vec3(0), Vec3(12e-6, 0.7e-6, 0.4e-6)), 12e-9, dy=None, dz=None)
+
+    # There are a few different simulation conditions, let's keep this one but see if we need to change later
+    r1 = cavity.simulate("resonance", target_freq=source_frequency, source_pulselength=60e-15, analyze_fspan=10e12,
+                         analyze_time=600e-15, mesh_regions=[man_mesh], sim_size=Vec3(1.25, 3, 8))
+    # r1 = cavity.simulate("resonance", target_freq=target_frequency, mesh_regions=[man_mesh],
+    #                     sim_size=Vec3(2, 3, 8))
+
+    # r1 = cavity.simulate("resonance", target_freq=source_frequency)
+
+    qleft = r1["qxmin"]
+    qright = r1["qxmax"]
+    qy = 1 / (2 / r1["qymax"])
+    qz = 1 / (1 / r1["qzmin"] + 1 / r1["qzmax"])
+    # r1["xyprofile"].show()
+    # r1["yzprofile"].show()
+
+    # cavity = Cavity1D(load_path=file_name, engine=engine) #Don't think we need this at all
+    # r2 = cavity.get_results("resonance")[-1]
+    # print(r2)
+    # print(r2['res']["xyprofile"].max_loc())
+    # print(r2['res']["yzprofile"].max_loc())
+    # r2["sess_res"].show()
+
+    qi = 1 / ((1 / qy) + (1 / qz) + (1 / qleft))
+    qe = qright
+    qtot = 1 / (1 / qi + 1 / qe)
+    vmode = r1["vmode"]
+    vmode_copy = vmode
+    vmode = 1e6 if vmode < 0.48 else vmode
+    qtot_max = 300000
+    purcell = qtot / vmode if qtot < qtot_max else qtot_max / vmode
+    freq = r1["freq"]
+
+    return freq, vmode, qe, qi
