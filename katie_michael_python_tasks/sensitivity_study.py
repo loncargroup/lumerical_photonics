@@ -7,6 +7,14 @@
 # E.g. if sigma_x = 50 nm, then we'll take n_points over +-50 nm for the hx parameter and run simulations to measure
 # freq, vmode, qe, qi
 
+# We have accomplished this! Let's turn it into a function: check_sensitivity(cp, parameter, output, sigma, n_points)
+# Not sure what to output, but we can probably save some kind of plot, some numerical estimate of the fabrication tolerance
+# is of a given design.
+#
+# One method is '3 dB' tolerance to a given parameter, i.e. when the output gets cut in half.
+# Probably better method is 'output_threshold', i.e. at what sigma does the output fall below a certain provided value.
+# From here, we can tell how much variance of parameters correspond to acceptable devices
+
 import os
 import numpy as np
 from matplotlib import pyplot as plt
