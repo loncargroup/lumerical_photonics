@@ -1,0 +1,19 @@
+The purpose of this new workflow is to integrate simulation and gds making.
+This way, we can better track simulated device properties with real device properties.
+Let's turn this into a set of functions
+
+1. client
+    Define cavity parameters cp, if we're doing optomechanics then pull via csv from matlab. Set up output .csv,
+    which gives all the information we want for a given cavity.
+
+    1. cavity, holes = make_cavity(cp)
+    2. freq, vmode, qe, qi = simulate_cavity(cp, cavity)
+    3. gds = gds_cavity(cp, holes)
+
+    With all this information, we are going to want to put together all the information into a csv line, as well as the
+    gds file so that we can move it around in a future parameter sweep
+
+2. build_cavity(cp)
+    Here we will use the cavity parameters to define the Lumerical object cavity (which we'll use to run the simulation)
+    as well as Lumerical object holes (which we'll use to create the gds)
+

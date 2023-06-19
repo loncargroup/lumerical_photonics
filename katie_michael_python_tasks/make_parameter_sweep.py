@@ -18,3 +18,10 @@
 # from nominal parameters param_off = mean(param_nom - param_meas) and the variance of device parameters param_var =
 # var(param_off - param_measure). We can use param_off as a simple fabrication offset, but we should incorporate
 # param_mean into approach 2.
+
+
+hx \in (.6,.8)
+hy \in (1.3, 1.5)
+
+for hx, hy in zip(hxList,hyList):
+    simulate_and_gds
