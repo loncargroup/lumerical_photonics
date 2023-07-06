@@ -1,0 +1,28 @@
+I like what we did a lot with the msg_cavity, where we make the cavity structure, simulate it, and then gds it in one sweep.
+This will be a little different in a couple of small ways. Maybe possible to integrate using if statements to generalize,
+ but let's run this on a case by case for now
+
+ 1. We need to include our phononic shields in the generate_cavity_and_check and make_cavity section.
+ I think that this is pretty easy, just add another list to the output of generate_cavity_and_check
+  that is called 'type_list' or something and then this will easily incorporate into the for loop in make_cavity
+
+ 2. We probably will want to include a side-coupling scheme at some point, but let's focus on this later.
+
+ 3. We need to change gds_cavity rather significantly, to include the side-coupling and the different tethering to the cavity
+
+ 4. We also need to change how we get our input, since we are going to be accepting it from COMSOL (we can choose two modes of operation)
+    Let's start with doing pure optics, and then move towards doing mechanics at same time.
+
+
+Update: I think that these things are important, but we are not going to be able to import_gds from Lumerical over to COMSOL, which is a bummer.
+As such, we shouldn't focus so so much on integration, but we should utilize each platform for what it's good at.
+
+Lumerical: optical simulation + side-coupling (no PnShield)
+    We probably should still use Lumerical to create the gds since it's nice, but we shouldn't think about actually simulating
+    the PnShield optics, since it is so far away from the cavity center
+COMSOL: mechanical simulation + PnShield (no side-coupling)
+
+Idea now.
+    Start with a simple make_simulate, but add complexity by trying to add a side-coupling waveguide. In my head, this involves
+    just making another structure that is separated by some gap and seeing changes to Qe, Qi as a function of gap separation.
+

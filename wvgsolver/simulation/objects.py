@@ -63,12 +63,12 @@ class UnitCell(SimulationObject):
       structures.append(copy2_s)
 
     return structures
-  
+
   def get_size(self):
     return self._size
 
   def _simulate_bandgap(self, sess, freqs=(0.2e15, 0.6e15, 100000), min_gap=1e13, k=0.5, **kwargs):
-    """Simulates and calculates the bandgap of this unit cell. It does this by simulating the 
+    """Simulates and calculates the bandgap of this unit cell. It does this by simulating the
     bandstructure at the given normalized wave vector (usually 0.5), finding the two highest peaks
     in the frequency domain around the region of interest, and returns them sorted.
 
@@ -124,7 +124,7 @@ class UnitCell(SimulationObject):
 
   def _simulate_bandstructure(self, sess, ks=(0, 0.5, 20), freqs=(0.2e15, 0.6e15, 100000), run_time=600e-15, \
     window_pos=0.5, TEonly=True, ndipoles=5, dipole_region=Vec3(1, 0, 0), dipole_directions=Vec3(0, 1, 0), \
-    sim_size=3, analyze_region=0.1): 
+    sim_size=3, analyze_region=0.1):
     """Simulate the bandstructure of this unit cell by calculating the frequency domain left after an
     electric dipole pulse is allowed to dissipate through an infinite (implemented using boundary conditions)
     array of this unit cell, over a range of values for the wave vector.
@@ -175,7 +175,7 @@ class UnitCell(SimulationObject):
     """
     ks = np.linspace(*ks)
     freqs = np.linspace(*freqs)
-    
+
     sim_size = self._size*sim_size
     sim_size.x = self._size.x
 
@@ -203,7 +203,7 @@ class UnitCell(SimulationObject):
       ), freqs))
       output[s,:] = sweep[:,0]
       logging.info("Sweep %d/%d completed (k=%f)" % (s + 1, nsweeps, k))
-    
+
     return Bandstructure(output, (ks, freqs, self._size.x))
 
 class Waveguide(SimulationObject):
@@ -223,8 +223,8 @@ class Waveguide(SimulationObject):
     metadata : any
       Any associated metadata
     """
-   
-    self._structures = structures if isinstance(structures, list) else [structures] 
+
+    self._structures = structures if isinstance(structures, list) else [structures]
     self._size = size
     super().__init__(engine=engine, load_path=load_path, metadata=metadata)
 
@@ -240,12 +240,12 @@ class Waveguide(SimulationObject):
 
   def get_structures(self, sim_type=None):
     return self._structures
- 
+
   def _getsize(self):
     return self._size
 
   def _simulate_guidedness(self, sess, target_freq=400e12, bboxes={}, simbbox=None, source_offset=0.5e-6, freq_span=0, freq_points=1, sim_time=200e-15, source_size=3, TEonly=True):
-    """Simulates the guidedness of the cavity by using a mode source in the positive x direction and calculating 
+    """Simulates the guidedness of the cavity by using a mode source in the positive x direction and calculating
     the transmission and reflection coefficients along the x axis. The sum of these coefficients indicates the 
     fraction of light from the mode source that remains guided along the x axis
 
@@ -322,9 +322,9 @@ class Waveguide(SimulationObject):
       "z": res["pzmax"] - res["pzmin"]
     }
 
-  
+
 class Cavity1D(Waveguide):
-  """This class represents a 1D cavity, which consists of a series of unit cells stacked together, plus 
+  """This class represents a 1D cavity, which consists of a series of unit cells stacked together, plus
   additional structures (such as a beam). All simulations on this cavity are performed by stacking the list of
   unit cells in the x dimension, centering this stack around the origin, and adding any additional structures.
   """
@@ -356,7 +356,7 @@ class Cavity1D(Waveguide):
     metadata : any
       Any associated metadata
     """
-    
+
     self._unit_cells = unit_cells if isinstance(unit_cells, list) else [unit_cells]
     self._center_cell = center_cell
     self._center_shift = center_shift
@@ -388,7 +388,7 @@ class Cavity1D(Waveguide):
   def get_structures(self, sim_type=None):
     if len(self._unit_cells) < 1:
       return [ s.copy() for s in self._structures ]
-    
+
     center_cell = self._center_cell
     if center_cell is None:
       center_cell = int(len(self._unit_cells) / 2) - 1
@@ -473,12 +473,12 @@ class Cavity1D(Waveguide):
         r = target_freq - gap[0]
         output.append(r)
         memo.append((c, r))
-    
+
     return Quasipotential(output)
 
   def _simulate_resonance(self, sess, target_freq=400e12, source_pulselength=60e-15, analyze_fspan=3e14, \
-      analyze_time=590e-15, eref_time=80e-15, TEonly=True, sim_size=Vec3(2, 4, 4), energy_downsample=2):
-    """Simulate the cavity's resonance frequency and obtain directional Q factors, mode volume, and 
+      analyze_time=590e-15, eref_time=80e-15, TEonly=True, sim_size=Vec3(2, 4, 4),energy_downsample=2):
+    """Simulate the cavity's resonance frequency and obtain directional Q factors, mode volume, and
     electric field profile data. The simulation comprises of one dipole polarized along the y-axis
     in the center of the cavity, and all simulation results are calculated in the last 20 fs 
     or so of the simulation. The electric dipole emits a pulse of a given length with a center
@@ -541,7 +541,7 @@ class Cavity1D(Waveguide):
     sess.set_sim_region(size=bbox.size * Vec3(1.2, 1, 1), boundaries={
       "ymin": "antisymmetric" if TEonly else "pml"
     })
-    sess.set_sources(DipoleSource(f=target_freq, pulse_length=source_pulselength, pulse_offset=2.1*source_pulselength, pos=Vec3(0), axis=Vec3(0, 1, 0)))
+    sess.set_sources(DipoleSource(f=target_freq, pulse_length=source_pulselength, pulse_offset=2.1*source_pulselength, pos= Vec3(0), axis=Vec3(0, 1, 0)))
     sess.set_sim_time(analyze_time + 5 / target_freq)
 
     st = analyze_time
@@ -561,7 +561,7 @@ class Cavity1D(Waveguide):
     }
     if not TEonly:
       analysis["pymin"] = SideWavePower(bbox, AXIS_Y, -1, st, target_freq)
-    
+
     sess.run(analysis, analyze=False)
 
     res = sess.analyze("res")
