@@ -24,10 +24,10 @@ from dev_layout import dev_map
 # Define the cavity parameter list
 
 cp = {'a': 0.2965 * 1e-6,
+      'w0': .6*1e-6,
+      'h0': .15*1e-6,
       'cX': 0.701,
       'cY': 1.7,
-      'cW': 2,
-      'cH': .5,
       'dA': 0.176364,
       'dY': 0,
       'dX': 0.176364,
@@ -39,10 +39,11 @@ cp = {'a': 0.2965 * 1e-6,
       'ndef': 6,
       'ntaper': 3,
       'hole_type': 'rib',
+      'dfdA': .0684, # THz / nm
       'shift': -1,
-      'source frequency': 406.7e12,
-      'cav_defect_type': 'cubic',
-      'min_dim': 5e-8,
+      'target frequency': 406.7e12,
+      'cav defect type': 'cubic',
+      'min dim': 5e-8,
       'plot_E': False
       }
 
@@ -55,14 +56,14 @@ layout = {
     'filename': None
 }
 
-do_sim = False
+do_sim = True
 
 if do_sim:
-    layout['filename'] = '062723_ribparametersweep_a-cX_simmed'
+    layout['filename'] = '070623_ribparametersweep_a-cY_simmed'
     column_data = ["Device x position", "Device y position", "a", "cY", "Frequency", "Scattering Q", "Waveguide Q",
                    "Mode volume"]
 else:
-    layout['filename'] = '062723_ribparametersweep_a-cX_notSimmed'
+    layout['filename'] = '070623_ribparametersweep_a-cY_notSimmed'
     column_data = ["Device x position", "Device y position", "a", "cX"]
 
 dat_loc = layout['directory'] + '/' + layout['filename']
@@ -79,6 +80,7 @@ df = pd.DataFrame(data=np.empty((len(pos_list), len(column_data))), columns=colu
 z = 0
 while z < len(pos_list)-1:
     for a in aList:
+        cp['source frequency'] = cp['target frequency'] + cp['dfdA'] * (cp['a'] - a)
         for cY in cYList:
             print(z)
             (x, y) = pos_list[z]
@@ -87,7 +89,7 @@ while z < len(pos_list)-1:
             cavity = make_cavity(cp)
             device = gds_cavity(cavity, cp).move(destination=(x, y)).rotate(45, center=(x, y))
             E.add(device)
-
+            E.write_gds(gds_name)
             if do_sim:
                 cav_results = simulate_cavity(cavity, cp)
                 freq = cav_results['freq']
@@ -106,5 +108,5 @@ while z < len(pos_list)-1:
                 z += 1
         if z > len(pos_list)-2:
             break
-E.write_gds(gds_name)
+
 print(df)

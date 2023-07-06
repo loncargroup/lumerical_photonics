@@ -155,7 +155,7 @@ def generate_cavity_and_check(pcc_params):
 
 
 def make_cavity(cp):
-    hide = True
+    hide = False
     FDTDLoc = 'C:/Program Files/Lumerical/v221/'  # FDTDLoc, I will show you where this is later but this is how you can do it local
     FDTDexeLoc = os.path.join(FDTDLoc, 'bin/fdtd-solutions')
     FDTDmpiLoc = os.path.join(FDTDLoc, 'bin/fdtd-engine-ompi-lcl')
@@ -257,6 +257,7 @@ def simulate_cavity(cavity, cp):
 
     print('---')
     return cavity_results
+
 
 
 def gds_cavity(cavity, cp):
