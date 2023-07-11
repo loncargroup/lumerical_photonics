@@ -70,8 +70,8 @@ dat_loc = layout['directory'] + '/' + layout['filename']
 gds_name = dat_loc+'.gds'
 df_name = dat_loc+'.csv'
 E, pos_list = dev_map(layout)
-deviationA = 0.1  # This is a 10% deviation on either side
-deviationY = 0.1  # This a
+deviationA = 0.05  # This is a 5% deviation on either side
+deviationY = 0.05  # This a
 numA = 10
 numY = 10
 aList = np.linspace(cp['a'] * (1 - deviationA), cp['a'] * (1 + deviationA), numA)
@@ -98,6 +98,7 @@ while z < len(pos_list)-1:
                 vmode = cav_results['vmode']
                 df.loc[z, column_data] = [x, y, a*1e6, cY, freq, qi, qe, vmode]
                 df.to_csv(df_name)
+                cp['source frequency'] = freq
             else:
                 df.loc[z, column_data] = [x, y, a*1e6, cY]
                 df.to_csv(df_name)
