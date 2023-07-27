@@ -59,11 +59,11 @@ layout = {
 do_sim = True
 
 if do_sim:
-    layout['filename'] = '070623_ribparametersweep_a-cY_simmed'
+    layout['filename'] = '071823_ribparametersweep_a-cY_simmed'
     column_data = ["Device x position", "Device y position", "a", "cY", "Frequency", "Scattering Q", "Waveguide Q",
                    "Mode volume"]
 else:
-    layout['filename'] = '070623_ribparametersweep_a-cY_notSimmed'
+    layout['filename'] = '071823_ribparametersweep_a-cY_notSimmed'
     column_data = ["Device x position", "Device y position", "a", "cX"]
 
 dat_loc = layout['directory'] + '/' + layout['filename']

@@ -559,6 +559,21 @@ class Cavity1D(Waveguide):
       "xyprofile": WaveProfile(BBox(bbox.pos + Vec3(0, 0, 0.45*size.z), bbox.size), AXIS_Z, st, target_freq),
       "yzprofile": WaveProfile(bbox, AXIS_X, st, target_freq),
     }
+    #add time monitors fix code from this point!
+    sess.fdtd.addtime(name=self.monitor_names[i], monitor_type=1, x=pos.x, y=pos.y,
+                      z=pos.z, output_Hx=False, output_Hy=False, output_Hz=False, min_sampling_per_cycle=10000)
+
+    time = sess.fdtd.addtime(name=self.time_monitor, monitor_type=8, x=self.bbox.pos.x, y=self.bbox.pos.y,
+                             z=self.bbox.pos.z, output_Hx=False, output_Hy=False, output_Hz=False,
+                             down_sample_X=self.downsample,
+                             down_sample_Y=self.downsample, down_sample_Z=self.downsample)
+    time.x_span = self.bbox.size.x
+    time.y_span = self.bbox.size.y
+    time.z_span = self.bbox.size.z
+    time.stop_method = 2
+    time.start_time = self.start_time
+    time.stop_time = self.stop_time
+
     if not TEonly:
       analysis["pymin"] = SideWavePower(bbox, AXIS_Y, -1, st, target_freq)
 

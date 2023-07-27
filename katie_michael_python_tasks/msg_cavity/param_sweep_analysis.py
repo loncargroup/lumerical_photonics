@@ -13,10 +13,10 @@ wl = [c / i for i in df['Frequency']]
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
-# for i in range(95):
-#     ax.scatter(df['a'][i], df['cY'][i], df['Scattering Q'][i])
-# plt.show()
-
 for i in range(95):
-    ax.scatter(df['a'][i], df['cY'][i], wl[i])
+    ax.scatter(df['a'][i], df['cY'][i], df['Scattering Q'][i])
 plt.show()
+
+# for i in range(95):
+#     ax.scatter(df['a'][i], df['cY'][i], wl[i])
+# plt.show()
